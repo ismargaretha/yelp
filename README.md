@@ -1,7 +1,7 @@
 
 # Yelp
 
-The developed data pipeline translates the non-relational Yelp dataset distributed over JSON files, into a 3NF-normalized dataset stored in Snowflake. The resulting schema ensures data consistency and referential integrity across tables, and is meant to be the source of truth for analytical queries and BI tools. Additionally, the data was enriched with demographics and weather data coming from third-party data sources.
+The developed data pipeline translates the non-relational Yelp dataset distributed over JSON files, into a normalized Dimensional Model dataset stored in Snowflake. The resulting schema ensures data consistency and referential integrity across tables, and is meant to be the source of truth for analytical queries and BI tools. Additionally, the data was enriched with demographics and weather data coming from third-party data sources.
 
 The entire process was done using dbt and Snowflake.
 
