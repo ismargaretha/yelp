@@ -18,3 +18,5 @@ The [Yelp Open Dataset](https://www.yelp.com/dataset) is a perfect candidate for
 - (3) this dataset provides lots of diverse information and allows for many analysis approaches, from traditional analytical queries (such as "Give me the average star rating for each city") to Graph Mining, Photo Classification, Natural Language Processing, and Sentiment Analysis;
 - (4) Moreover, it was produced in a real production setting (as opposed to synthetic data generation).
 To make the contribution unique, the Yelp dataset was enriched by demographics and weather data. This allows the end user to make queries such as "Does the number of ratings depend upon the city's population density?" or "Which restaurants are particularly popular during hot weather?".
+
+tar -xvzf yelp_dataset.tar
