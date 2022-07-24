@@ -53,7 +53,7 @@ Note: fields such as goodformeal_* are just placeholders for multiple fields wit
 
 The model consists of 5 tables as a result of normalizing a table provided by Yelp. The schema is closer to a Star schema as there is only one fact table - t2_businesses - and 4 dimensional tables. Some tables keep their native keys, while for others monotonically increasing ids were generated. Rule of thumb: Use generated UID keys by Snowflake for entities.
 
-### Data Prep prior to Snowflake stage ###
+### Pre-process data with Python prior to Snowflake stage ###
 
 Prior to move data into Snowflake using a `copy into` command, data is being filtered to one state only **Florida** using Python in Jupyter Notebook. This was done for cost efficiency purpose before uploading data to the *S3 bucket as an external stage*, and prior to move the data to *Snowflake's internal stage*.
 The full approach can be found in [Jupter Notebook: yelp_business_florida](https://github.com/ismargaretha/yelp/blob/28d93800f984cc959b6855133d38b92ff6e3ced0/yelp_business_florida.ipynb)
