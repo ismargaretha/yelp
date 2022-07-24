@@ -111,4 +111,4 @@ This was done right after the staging process was done and variant data were tra
 ## Final Product
 
 - 1 fact table: **t2_businesses** and 4 dimension tables: **t2_business_attributes**, **t2_addresses**, **t2_hours**, **t2_categories**
-- Data is imported to Tableau to create a dashboard for data visualization purpose. [Tableau Dashboard](https://github.com/ismargaretha/yelp/blob/21adb1f23f6b5baaf1cdfc4df73c47ad30f47f84/Yelp%20Recommendations.png)
+- Data is imported to Tableau to create a dashboard for data visualization purpose. ![image](https://github.com/ismargaretha/yelp/blob/21adb1f23f6b5baaf1cdfc4df73c47ad30f47f84/Yelp%20Recommendations.png)
