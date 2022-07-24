@@ -1,0 +1,427 @@
+--Create a New Database and Table for the Data
+create database yelp;
+create schema business;
+
+--Execute the following USE commands to set the worksheet context appropriately:
+use role accountadmin;
+use warehouse taldev;
+use database yelp;
+use schema business;
+
+--create integration object for external stage
+create or replace storage integration s3_int
+    type = external_stage
+    storage_provider = s3
+    enabled = true
+    storage_aws_role_arn = 'arn:aws:iam::694712252239:role/snowflake-role'
+storage_allowed_locations = ('s3://ismargaretha-yelp/yelp_dataset/');
+
+--describe integration object to fetch external_id and to be used in s3
+desc integration s3_int;
+
+--create or replace file format
+create or replace file format jsonformat
+    type = 'json'
+    strip_outer_array = true;
+    
+--create external stage object
+create or replace stage yelp.business.yelp_stage
+    URL = 's3://ismargaretha-yelp/yelp_dataset/json/'
+    storage_integration = s3_int
+    file_format = jsonformat;
+    
+--list out files in the stage
+list @yelp_stage;
+
+--create variant table
+create table raw_business (v variant);
+
+--load data from stage to table
+copy into raw_business
+from @yelp_stage/business_fl.json
+file_format = jsonformat;
+
+--change table name from fact to raw
+--alter table raw_tip rename to raw_tips;
+
+--------------------------------------------T1_BUSINESSES TABLE-------------------------------------------------
+create or replace table raw_business_structured as
+    select
+    v:business_id::string as business_id,
+    v:name::string as business_name,
+    v:address::string as address,
+    v:city::string as city,
+    v:state::string as state,
+    v:postal_code::string as postal_code,
+    v:latitude::float as latitude,
+    v:longitude::float as longitude,
+    v:stars::float as stars,
+    v:review_count::float as review_count,
+    case v:is_open when 1 then true else false END as is_open,
+    v:categories::string as categories,
+    
+    v:hours.Monday::string as monday_hours,
+    v:hours.Tuesday::string as tuesday_hours,
+    v:hours.Wednesday::string as wednesday_hours,
+    v:hours.Thursday::string as thursday_hours,
+    v:hours.Friday::string as friday_hours,
+    v:hours.Saturday::string as saturday_hours,
+    v:hours.Sunday::string as sunday_hours,
+    
+    --v:attributes.AgesAllowed::string as AgesAllowed,
+    v:attributes.Alcohol::string as Alcohol,
+    v:attributes.BikeParking::string as BikeParking,
+    v:attributes.BusinessAccepts.Bitcoin::string as BusinessAcceptsBitcoin,
+    v:attributes.BusinessAccepts.CreditCards::string as BusinessAcceptsCreditCards,
+    v:attributes.ByAppointmentOnly::string as ByAppointmentOnly,
+    --v:attributes.Caters::string as Caters,
+    --v:attributes.CoatCheck::string as CoatCheck,
+    --v:attributes.Corkage::string as Corkage,
+    v:attributes.DogsAllowed::string as DogsAllowed,
+    v:attributes.DriveThru::string as DriveThru,
+    v:attributes.GoodForDancing::string as GoodForDancing,
+    v:attributes.GoodForKids::string as GoodForKids,
+    v:attributes.HappyHour::string as HappyHour,
+    v:attributes.HasTV::string as HasTV,
+    v:attributes.NoiseLevel::string as NoiseLevel,
+    v:attributes.Open24Hours::string as Open24Hours,
+    v:attributes.OutdoorSeating::string as OutdoorSeating,
+    v:attributes.RestaurantsAttire::string as RestaurantsAttire,
+    v:attributes.RestaurantsCounterService::string as RestaurantsCounterService,
+    v:attributes.RestaurantsDelivery::string as RestaurantsDelivery,
+    v:attributes.RestaurantsGoodForGroups::string as RestaurantsGoodForGroups,
+    v:attributes.RestaurantsPriceRange2::string as RestaurantsPriceRange2,
+    v:attributes.RestaurantsReservations::string as RestaurantsReservations,
+    v:attributes.RestaurantsTableService::string as RestaurantsTableService,
+    v:attributes.RestaurantsTakeOut::string as RestaurantsTakeOut,
+    v:attributes.Smoking::string as Smoking,
+    v:attributes.WheelchairAccessible::string as WheelchairAccessible,
+    v:attributes.WiFi::string as WiFi,
+    v:attributes.Ambience::string as Ambience,
+    v:attributes.BestNights::string as BestNights,
+    v:attributes.BusinessParking::string as BusinessParking,
+    v:attributes.GoodForMeal::string as GoodForMeal,
+    
+    /*v:attributes.DietaryRestrictions::string as DietaryRestrictions,
+    v:attributes.Ambience."u'romantic'"::string as Ambience_romantic,
+    v:attributes.Ambience."u'casual'"::string as Ambience_casual,
+    v:attributes.Ambience."u'trendy'"::string as Ambience_trendy,
+    v:attributes.Ambience."u'intimate'"::string as Ambience_intimate,
+    v:attributes.Ambience."u'hipster'"::string as Ambience_hipster,
+    v:attributes.Ambience."u'upscale'"::string as Ambience_upscale,
+    v:attributes.Ambience."u'divey'"::string as Ambience_divey,
+    v:attributes.Ambience."u'touristy'"::string as Ambience_touristy,
+    v:attributes.Ambience."u'classy'"::string as Ambience_classy,
+    v:attributes.BestNights."u'sunday'"::string as BestNights_sunday,
+    v:attributes.BestNights."u'thursday'"::string as BestNights_thursday,
+    v:attributes.BestNights."u'monday'"::string as BestNights_monday,
+    v:attributes.BestNights."u'wednesday'"::string as BestNights_wednesday,
+    v:attributes.BestNights."u'saturday'"::string as BestNights_saturday,
+    v:attributes.BestNights."u'friday'"::string as BestNights_friday,
+    v:attributes.BestNights."u'tuesday'"::string as BestNights_tuesday,
+    v:attributes.BusinessParking."u'valet'"::string as BusinessParking_valet,
+    v:attributes.BusinessParking."u'lot'"::string as BusinessParking_lot,
+    v:attributes.BusinessParking."u'validated'"::string as BusinessParking_validated,
+    v:attributes.BusinessParking."u'garage'"::string as BusinessParking_garage,
+    v:attributes.BusinessParking."u'street'"::string as BusinessParking_street,
+    v:attributes.DietaryRestrictions."u'kosher'"::string as DietaryRestrictions_kosher,
+    v:attributes.DietaryRestrictions."u'dairy_free'"::string as DietaryRestrictions_dairy_free,
+    v:attributes.DietaryRestrictions."u'vegan'"::string as DietaryRestrictions_vegan,
+    v:attributes.DietaryRestrictions."u'vegetarian'"::string as DietaryRestrictions_vegetarian,
+    v:attributes.DietaryRestrictions."u'gluten_free'"::string as DietaryRestrictions_gluten_free,
+    v:attributes.DietaryRestrictions."u'soy_free'"::string as DietaryRestrictions_soy_free,
+    v:attributes.DietaryRestrictions."u'halal'"::string as DietaryRestrictions_halal,
+    v:attributes.GoodForMeal."u'lunch'"::string as GoodForMeal_lunch,
+    v:attributes.GoodForMeal."u'brunch'"::string as GoodForMeal_brunch,
+    v:attributes.GoodForMeal."u'dinner'"::string as GoodForMeal_dinner,
+    v:attributes.GoodForMeal."u'latenight'"::string as GoodForMeal_latenight,
+    v:attributes.GoodForMeal."u'dessert'"::string as GoodForMeal_dessert,
+    v:attributes.GoodForMeal."u'breakfast'"::string as GoodForMeal_breakfast,*/
+    
+    right(uuid_string(), 12) as address_id
+    --right(uuid_string(), 6) as hours_id,
+    --right(uuid_string(), 9) as attributes_id,
+    --right(uuid_string(), 7) as categories_id
+    
+from raw_business
+where v:categories like ('%Restaurants%');
+
+
+--check data quality
+select distinct state, count (distinct business_id)
+from t1_businesses
+group by 1;
+
+--don't forget to delete your stage and raw data from here
+
+
+--------------------------------------------T1_BUSINESSES TABLE-------------------------------------------------
+
+create or replace table t1_businesses as
+with cleanup as
+(select
+    business_id,
+    business_name,
+    address,
+    city,
+    state,
+    postal_code,
+    latitude,
+    longitude,
+    stars,
+    review_count,
+    is_open,
+    
+    case 
+        when categories ilike '%Vietnam%' then 'Vietnam'
+        when categories ilike '%Italian%' then 'Italian'
+        when categories ilike '%American%' then 'American'
+        when categories ilike '%Mexican%' then 'Mexican'
+        when categories ilike '%Tex-Mex%' then 'Mexican'
+        when categories ilike '%French%' then 'French'
+        when categories ilike '%Polish%' then 'Polish'
+        when categories ilike '%Peruvian%' then 'Peruvian'
+        when categories ilike '%Japanese%' then 'Japanese'
+        when categories ilike '%Chinese%' then 'Chinese'
+        when categories ilike '%Middle Eastern%' then 'Middle Eastern'
+        when categories ilike '%India%' then 'Indian'
+        when categories ilike '%Spanish%' then 'Spanish'
+        when categories ilike '%Greek%' then 'Greek'
+        when categories ilike '%Portuguese%' then 'Portuguese'
+        when categories ilike '%British%' then 'British'
+        when categories ilike '%Caribbean%' then 'Caribbean'
+        when categories ilike '%Filipino%' then 'Filipino'
+        when categories ilike '%African%' then 'African'
+        when categories ilike '%Ethiopian%' then 'African'
+        when categories ilike '%Thai%' then 'Thai'
+        when categories ilike '%Korean%' then 'Korean'
+        when categories ilike '%Asian%' then 'Asian'
+        when categories ilike '%Cuban%' then 'Cuban'
+        when categories ilike '%German%' then 'German'
+        when categories ilike '%Southern%' then 'Southern'
+        when categories ilike '%Russian%' then 'Russian'
+        when categories ilike '%Scot%' then 'Scottish'
+        when categories ilike '%Irish%' then 'Irish'
+        when categories ilike '%Mediterranean%' then 'Mediterranean'
+        when categories ilike '%Pizza%' then 'Pizza'
+        when categories ilike '%Barbeque%' then 'Barbeque'
+        when categories ilike '%Bars%' then 'Bars'
+        when categories ilike '%pub%' then 'Bars'
+        when categories ilike '%Salad%' then 'Salad'
+        when categories ilike '%Steak%' then 'Steakhouse'
+        when categories ilike '%Seafood%' then 'Seafood'
+        when categories ilike '%Brazilian%' then 'Brazilian'
+        when categories ilike '%Ethnic%' then 'Ethnic Food'
+        when categories ilike '%Coffee%' then 'Cafe'
+        when categories ilike '%Cafe%' then 'Cafe'
+        when categories ilike '%Brunch%' then 'Cafe'
+        when categories ilike '%Bubble Tea%' then 'Bubble Tea'
+        when categories ilike '%Ice Cream%' then 'Ice Cream'
+        when categories ilike '%Fast Food%' then 'Fast Food'
+        when categories ilike '%Food Trucks%' then 'Food Trucks/Stands'
+        when categories ilike '%Food Stands%' then 'Food Trucks/Stands'
+        when categories ilike '%Soul Food%' then 'Soul Food'
+        when categories ilike '%Burgers%' then 'Burgers'
+        when categories ilike '%Hot Dogs%' then 'Burgers'
+        when categories ilike '%Sandwich%' then 'Sandwich'
+        when categories ilike '%Bagels%' then 'Bagels'
+        when categories ilike '%Diners%' then 'Diners'
+        when categories ilike '%Delis%' then 'Delis'
+        when categories ilike '%Veg%' then 'Vegetarian'
+        when categories ilike '%Bakeries%' then 'Bakeries'
+        when categories ilike '%Nightlife%' then 'Nightlife'
+        when categories ilike '%Fish & Chips%' then 'Fish & Chips'
+        when categories ilike '%Turkish%' then 'Halal'
+        when categories ilike '%Halal%' then 'Halal'
+        when categories ilike '%Moroccan%' then 'Halal'
+        when categories ilike '%Poke%' then 'Poke'
+        when categories ilike '%Crep%' then 'Creperie'
+        when categories ilike '%Donut%' then 'Donut'
+        when categories ilike '%Event%' then 'Events'
+        when categories ilike '%Caterers%' then 'Events'
+        when categories ilike '%Wings%' then 'Wings'
+        when categories ilike '%Beer%' then 'Bar'
+        when categories ilike '%Buffet%' then 'Buffet'
+        when categories ilike '%Breweries%' then 'Breweries'
+        when categories ilike '%Grocery%' then 'Grocery'
+        when categories ilike '%Shopping%' then 'Grocery'
+        when categories ilike '%Store%' then 'Grocery'
+        when categories ilike '%Cajun%' then 'Cajun'
+        else 'Unidentified'
+    end as categories,
+    
+    monday_hours,
+    tuesday_hours,
+    wednesday_hours,
+    thursday_hours,
+    friday_hours,
+    saturday_hours,
+    sunday_hours,
+    
+    Alcohol,
+    BikeParking,
+    BusinessAcceptsBitcoin,
+    BusinessAcceptsCreditCards,
+    ByAppointmentOnly,
+    DogsAllowed,
+    DriveThru,
+    GoodForDancing,
+    GoodForKids,
+    HappyHour,
+    HasTV,
+    NoiseLevel,
+    Open24Hours,
+    OutdoorSeating,
+    RestaurantsAttire,
+    RestaurantsCounterService,
+    RestaurantsDelivery,
+    RestaurantsGoodForGroups,
+    RestaurantsPriceRange2,
+    RestaurantsReservations,
+    RestaurantsTableService,
+    RestaurantsTakeOut,
+    Smoking,
+    WheelchairAccessible,
+    WiFi,
+    Ambience,
+    BestNights,
+    BusinessParking,
+    GoodForMeal,
+    
+    address_id
+from raw_business_structured
+)
+
+select 
+    *,
+    case
+        when saturday_hours  is null then '00000'
+        else replace(saturday_hours, ':', '') 
+    end as hours_id,
+    upper(left(categories, 4) || '000') as category_id,
+    right(uuid_string(), 9) as attributes_id
+    
+from cleanup;
+
+--------------------------------------------T2_BUSINESSES TABLE-------------------------------------------------
+
+create or replace table t2_businesses as
+select
+    business_id,
+    address_id,
+    attributes_id,
+    hours_id,
+    category_id,
+    business_name,
+    review_count,
+    stars,
+    is_open
+from t1_businesses;
+
+--------------------------------------------T2_BUSINESSES_ATTRIBUTES TABLE-------------------------------------------------
+create or replace table t2_business_attributes as
+select
+    attributes_id,
+    case
+        when alcohol ilike '%beer_and_wine%' then 'beer, wine'
+        when alcohol ilike '%full_bar%' then 'full bar'
+        when alcohol ilike '%none%' then 'no alcohol'
+    end as Alcohol,
+    ByAppointmentOnly,
+    DogsAllowed,
+    case when DriveThru ilike '%None%' then 'False' else DriveThru end as DriveThru,
+    GoodForDancing,
+    GoodForKids,
+    HappyHour,
+    HasTV,
+    case
+        when noiselevel ilike '%quiet%' then 1
+        when noiselevel ilike '%average%' then 2
+        when noiselevel ilike '%loud%' then 3
+        when noiselevel ilike '%very_loud%' then 4
+    end as NoiseLevel,
+    Open24Hours,
+    case when OutdoorSeating ilike '%None%' then 'False' else OutdoorSeating end as OutdoorSeating,
+    case
+        when RestaurantsAttire ilike '%casual%' then 'casual'
+        when RestaurantsAttire ilike '%dressy%' then 'dressy'
+        when RestaurantsAttire ilike '%formal%' then 'formal'
+    end as RestaurantsAttire,
+    case when RestaurantsDelivery ilike '%None%' then 'False'  else RestaurantsDelivery end as RestaurantsDelivery,
+    case when RestaurantsGoodForGroups ilike '%None%' then 'False'  else RestaurantsGoodForGroups end as RestaurantsGoodForGroups,
+    case when RestaurantsPriceRange2 ilike 'None' then null  else RestaurantsPriceRange2 end as RestaurantsPriceRange2,
+    RestaurantsReservations,
+    RestaurantsTableService,
+    case when RestaurantsTakeOut ilike 'None' then null else RestaurantsTakeOut end as RestaurantsTakeOut,
+    case
+        when Smoking ilike '%no%' then 'no smoking'
+        when Smoking ilike '%None%' then 'no smoking'
+        when Smoking ilike '%outdoor%' then 'outdoor'
+    end as Smoking,
+    case
+        when WiFi ilike '%no%' then 'no wifi'
+        when WiFi ilike '%free%' then 'free wifi'
+    end as WiFi,
+    split_part(replace(regexp_substr(goodformeal, 'breakfast\\W+\\w+'), 'breakfast', ''), ' ', 2)  as goodformeal_breakfast,
+    split_part(replace(regexp_substr(goodformeal, 'brunch\\W+\\w+'), 'brunch', ''), ' ', 2)  as goodformeal_brunch,
+    split_part(replace(regexp_substr(goodformeal, 'lunch\\W+\\w+'), 'lunch', ''), ' ', 2)  as goodformeal_lunch, 
+    split_part(replace(regexp_substr(goodformeal, 'dinner\\W+\\w+'), 'lunch', ''), ' ', 2)  as goodformeal_dinner,  
+    split_part(replace(regexp_substr(goodformeal, 'latenight\\W+\\w+'), 'lunch', ''), ' ', 2)  as goodformeal_latenight, 
+    split_part(replace(regexp_substr(goodformeal, 'dessert\\W+\\w+'), 'dessert', ''), ' ', 2)  as goodformeal_dessert,
+    split_part(replace(regexp_substr(bestnights, 'monday\\W+\\w+'), 'monday', ''), ' ', 2)  as bestnights_monday,
+    split_part(replace(regexp_substr(bestnights, 'tuesday\\W+\\w+'), 'tuesday', ''), ' ', 2)  as bestnights_tuesday,
+    split_part(replace(regexp_substr(bestnights, 'wednesday\\W+\\w+'), 'wednesday', ''), ' ', 2)  as bestnights_wednesday, 
+    split_part(replace(regexp_substr(bestnights, 'thursday\\W+\\w+'), 'thursday', ''), ' ', 2)  as bestnights_thursday,  
+    split_part(replace(regexp_substr(bestnights, 'friday\\W+\\w+'), 'friday', ''), ' ', 2)  as bestnights_friday, 
+    split_part(replace(regexp_substr(bestnights, 'saturday\\W+\\w+'), 'saturday', ''), ' ', 2)  as bestnights_saturday, 
+    split_part(replace(regexp_substr(bestnights, 'sunday\\W+\\w+'), 'sunday', ''), ' ', 2)  as bestnights_sunday,
+    split_part(replace(regexp_substr(businessparking, 'garage\\W+\\w+'), 'garage', ''), ' ', 2)  as businessparking_garage,
+    split_part(replace(regexp_substr(businessparking, 'street\\W+\\w+'), 'street', ''), ' ', 2)  as businessparking_street,
+    split_part(replace(regexp_substr(businessparking, 'validated\\W+\\w+'), 'validated', ''), ' ', 2)  as businessparking_validated, 
+    split_part(replace(regexp_substr(businessparking, 'lot\\W+\\w+'), 'lot', ''), ' ', 2)  as businessparking_lot,  
+    split_part(replace(regexp_substr(businessparking, 'valet\\W+\\w+'), 'valet', ''), ' ', 2)  as businessparking_valet,  
+    split_part(replace(regexp_substr(ambience, 'divey\\W+\\w+'), 'divey', ''), ' ', 2)  as ambience_divey, 
+    split_part(replace(regexp_substr(ambience, 'hipster\\W+\\w+'), 'hipster', ''), ' ', 2)  as ambiece_hipster, 
+    split_part(replace(regexp_substr(ambience, 'casual\\W+\\w+'), 'casual', ''), ' ', 2)  as ambience_casual, 
+    split_part(replace(regexp_substr(ambience, 'touristy\\W+\\w+'), 'touristy', ''), ' ', 2)  as ambience_touristy, 
+    split_part(replace(regexp_substr(ambience, 'trendy\\W+\\w+'), 'trendy', ''), ' ', 2)  as ambience_trendy, 
+    split_part(replace(regexp_substr(ambience, 'intimate\\W+\\w+'), 'intimate', ''), ' ', 2)  as ambience_intimate, 
+    split_part(replace(regexp_substr(ambience, 'romantic\\W+\\w+'), 'romantic', ''), ' ', 2)  as ambience_romantic, 
+    split_part(replace(regexp_substr(ambience, 'classy\\W+\\w+'), 'classy', ''), ' ', 2)  as ambience_classy, 
+    split_part(replace(regexp_substr(ambience, 'upscale\\W+\\w+'), 'upscale', ''), ' ', 2)  as ambience_upscale
+    
+from t1_businesses;
+
+
+--------------------------------------------T2_ADDRESSES TABLE-------------------------------------------------
+create or replace table t2_addresses as
+select
+    address_id,
+    city,
+    address,
+    latitude,
+    longitude,
+    postal_code
+from t1_businesses;
+
+--------------------------------------------T2_HOURS TABLE-------------------------------------------------
+create or replace table t2_hours as
+select
+    hours_id,
+    monday_hours,
+    tuesday_hours,
+    wednesday_hours,
+    thursday_hours,
+    friday_hours,
+    saturday_hours,
+    sunday_hours
+from t1_businesses;
+
+--------------------------------------------T2_CATEGORIES TABLE-------------------------------------------------
+create or replace table t2_categories as
+select
+    category_id,
+    categories
+from t1_businesses;
+
+drop table t1_businesses;
