@@ -61,7 +61,7 @@ The full approach can be found in [Jupter Notebook: yelp_business_florida](https
 ### Data Tranfer in Snowflake ###
 
 The business.json data from Yelp dataset is staged, flattened, and normalized in Snowflake with the following table details:
-Snowflake SQL codes to form below tables can be found here:  [Yelp S nowflake SQL](https://github.com/ismargaretha/yelp/blob/52addc37442ca4bfc74b8eb383d379a483a3ae3f/yelp_snowflake_sql.txt)
+Snowflake SQL codes to form below tables can be found here:  [Yelp Snowflake SQL](https://github.com/ismargaretha/yelp/blob/52addc37442ca4bfc74b8eb383d379a483a3ae3f/yelp_snowflake_sql.txt)
 
 ***t2_businesses***
 
